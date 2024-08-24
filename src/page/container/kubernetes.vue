@@ -131,15 +131,20 @@ const data = reactive({
           name: 'Deployment',
           url: '/kubernetes/deployments',
         },
-        // {
-        //   id: 1.2,
-        //   name: 'StatefulSet',
-        //   url: '/kubernetes/statefulsets',
-        // },
+        {
+          id: 1.2,
+          name: 'StatefulSet',
+          url: '/kubernetes/statefulsets',
+        },
         {
           id: 1.3,
           name: 'Pod',
           url: '/kubernetes/pods',
+        },
+        {
+          id: 1.4,
+          name: 'Daemonset',
+          url: '/kubernetes/daemonsets',
         },
         // {
         //   id: 1.4,

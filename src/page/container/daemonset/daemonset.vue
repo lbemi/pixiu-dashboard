@@ -1,64 +1,30 @@
 <template>
-  <!-- <div class="title-card-container2">
-    <PiXiuYaml :refresh="getDeployments" title=""></PiXiuYaml>
-  </div> -->
   <Description
-    :description="'Deployment 是 Kubernetes 集群中用来管理应用的一种资源。它定义了应用的期望状态，比如副本数、镜像版本等，并提供策略来控制应用的部署、更新和回滚。'"
+    :description="'DaemonSet 是 Kubernetes 集群中的一个控制器，用于确保在每个（或特定的）节点上运行一个 Pod 的副本，并提供策略来控制应用的部署、更新和回滚。'"
   />
 
   <div style="margin-top: 5px">
     <el-row>
       <el-col>
-        <button class="pixiu-two-button" @click="createDeployment">新建</button>
-        <button class="pixiu-two-button2" style="margin-left: 10px" @click="getDeployments">
+        <button class="pixiu-two-button" @click="createDaemonset">新建</button>
+        <button class="pixiu-two-button2" style="margin-left: 10px" @click="getDaemonsets">
           刷新
         </button>
 
         <el-input
           v-model="data.pageInfo.search.searchInfo"
           placeholder="名称搜索关键字"
-          style="width: 35%; float: right"
+          style="width: 400px; float: right"
           clearable
-          @clear="getDeployments"
-          @input="searchDeployments"
+          @clear="getDaemonsets"
+          @input="searchDaemonsets"
         >
           <template #suffix>
-            <el-icon class="el-input__icon" @click="searchDeployments">
+            <el-icon class="el-input__icon" @click="searchDaemonsets">
               <component :is="'Search'" />
             </el-icon>
           </template>
         </el-input>
-
-        <!-- <el-input
-          v-model="data.pageInfo.search.searchInfo"
-          placeholder="Name: 关键字，Label: key1=value1,key2=value2"
-          style="width: 400px; float: right"
-          class="input-select-style"
-          clearable
-          @clear="getDeployments"
-          @input="searchDeployments"
-        >
-          <template #prefix>
-            <el-select
-              v-model="data.pageInfo.search.field"
-              class="select-no-arrow"
-              style="width: 50px"
-            >
-              <el-option label="名称" value="name" />
-              <el-option label="标签" value="label" />
-            </el-select>
-          </template>
-          <template #suffix>
-            <pixiu-icon
-              name="icon-search"
-              style="cursor: pointer"
-              size="15px"
-              type="iconfont"
-              color="#909399"
-              @click="getDeployments"
-            />
-          </template>
-        </el-input> -->
       </el-col>
     </el-row>
     <el-card class="box-card">
@@ -89,37 +55,15 @@
           </template>
         </el-table-column>
 
-        <!-- <el-table-column
-          prop="spec.template.metadata.labels"
-          label="Labels"
-          :formatter="formatterLabels"
-        />
-
-        <el-table-column
-          prop="spec.selector.matchLabels"
-          label="Selector"
-          :formatter="formatterLabels"
-        >
-        </el-table-column> -->
-
         <el-table-column prop="status" label="状态" :formatter="runningFormatter">
         </el-table-column>
 
-        <el-table-column prop="status" label="实例个数(正常/全部)">
+        <el-table-column prop="status" label="就绪/副本/失败">
           <template #default="scope">
-            <div style="display: flex">
-              {{ getDeployReady(scope.row) }}
-
-              <div style="margin-left: 8px; cursor: pointer">
-                <pixiu-icon
-                  name="icon-edit"
-                  size="12px"
-                  type="iconfont"
-                  color="#909399"
-                  @click="handleDeploymentScaleDialog(scope.row)"
-                />
-              </div>
-            </div>
+            <a style="color: green">{{ scope.row.status.numberReady }}</a
+            >/ <a style="color: green">{{ scope.row.status.updatedNumberScheduled }}</a
+            >/
+            <a style="color: red">{{ scope.row.status.numberUnavailable || 0 }}</a>
           </template>
         </el-table-column>
 
@@ -211,58 +155,8 @@
   </div>
 
   <el-dialog
-    :model-value="data.deploymentReplicasDialog"
-    style="color: #000000; font: 14px"
-    width="400px"
-    center
-    @close="closeDeploymentScaleDialog"
-  >
-    <template #header>
-      <div
-        style="
-          text-align: left;
-          font-weight: bold;
-          padding-left: 5px;
-          margin-top: 5px;
-          font-size: 14.5px;
-          color: #191919;
-        "
-      >
-        调整实例数
-      </div>
-    </template>
-
-    <el-form label-width="80px" style="max-width: 300px">
-      <el-form-item>
-        <template #label>
-          <span style="font-size: 13px; color: #191919">原副本数</span>
-        </template>
-        <el-input v-model="data.deploymentRepcliasFrom.origin" disabled />
-      </el-form-item>
-      <el-form-item>
-        <template #label>
-          <span style="font-size: 13px; color: #191919">新副本数</span>
-        </template>
-        <el-input v-model="data.deploymentRepcliasFrom.target" placeholder="请输入新副本数" />
-      </el-form-item>
-    </el-form>
-
-    <div style="margin-top: -25px"></div>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button class="pixiu-small-cancel-button" @click="closeDeploymentScaleDialog"
-          >取消</el-button
-        >
-        <el-button type="primary" class="pixiu-small-confirm-button" @click="confirmDeploymentScale"
-          >确认</el-button
-        >
-      </span>
-    </template>
-  </el-dialog>
-
-  <el-dialog
     :model-value="data.imageData.close"
-    style="color: #000000; font: 14px"
+    style="color: #000000; font-size: 14px"
     align-center
     draggable
     center
@@ -305,12 +199,12 @@
         color: '#191919',
       }"
     >
-      <el-table-column prop="name" sortable label="容器名称" width="280px">
+      <el-table-column prop="name" sortable label="容器名称" width="280px" />
+      <el-table-column label="容器类型" width="180px">
         <template #default="scope">
-          {{ scope.row.name
-          }}<el-tag v-if="scope.row.init" type="danger" size="small" style="margin-left: 10px"
-            >Init容器</el-tag
-          >
+          <el-tag :type="scope.row.init ? 'danger' : 'success'">{{
+            scope.row.init ? 'Init' : 'Normal'
+          }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="image" sortable label="镜像">
@@ -349,7 +243,7 @@
       />
     </el-table>
 
-    <div style="margin-bottom: -15px" />
+    <div />
     <template #footer>
       <span class="dialog-footer">
         <el-button style="float: right" class="pixiu-delete-cancel-button" @click="cancelImageFunc"
@@ -365,7 +259,7 @@
     title="编辑Yaml"
     :yaml="data.yaml"
     :read-only="false"
-    :refresh="getDeployments"
+    :refresh="getDaemonsets"
   ></PiXiuViewOrEdit>
   <pixiuDialog
     :close-event="data.deleteDialog.close"
@@ -402,7 +296,7 @@
             style="vertical-align: middle; font-size: 16px; margin-left: -25px; margin-top: -50px"
             ><WarningFilled
           /></el-icon>
-          <div style="vertical-align: middle; margin-top: -40px">获取 Deployment 的实时日志</div>
+          <div style="vertical-align: middle; margin-top: -40px">获取 Daemonset 的实时日志</div>
         </el-card>
 
         <el-form>
@@ -447,7 +341,7 @@
                 size="16px"
                 type="iconfont"
                 color="#909399"
-                @click="getDeploymentPods"
+                @click="getDaemonsetPods"
               />
             </div>
           </el-form-item>
@@ -500,13 +394,7 @@
     </div>
   </el-drawer>
 
-  <el-drawer
-    v-model="data.monitorData.drawer"
-    :size="data.drawerWidth"
-    :with-header="false"
-    @open="openMonitorDrawer"
-    @close="closeMonitorDrawer"
-  >
+  <el-drawer v-model="data.monitorData.drawer" :size="data.drawerWidth" :with-header="false">
     <div style="display: flex; flex-direction: column; height: 100%">
       <div>
         <div
@@ -515,7 +403,7 @@
             font-weight: bold;
             padding-left: 5px;
             margin-top: 5px;
-            font-size: 14.5px;
+            font-size: 14px;
             color: #191919;
           "
         >
@@ -526,7 +414,7 @@
             style="vertical-align: middle; font-size: 16px; margin-left: -25px; margin-top: -50px"
             ><WarningFilled
           /></el-icon>
-          <div style="vertical-align: middle; margin-top: -40px">查看 Deployment 的资源状态</div>
+          <div style="vertical-align: middle; margin-top: -40px">查看 Daemonset 的资源状态</div>
         </el-card>
       </div>
     </div>
@@ -536,7 +424,6 @@
     v-model="data.eventData.drawer"
     :size="data.eventData.width"
     :with-header="false"
-    @open="openEventDrawer"
     @close="closeEventDrawer"
   >
     <div style="display: flex; flex-direction: column; height: 100%">
@@ -559,13 +446,13 @@
             style="vertical-align: middle; font-size: 16px; margin-left: -25px; margin-top: -50px"
             ><WarningFilled
           /></el-icon>
-          <div style="vertical-align: middle; margin-top: -40px">获取 Deployment 的事件</div>
+          <div style="vertical-align: middle; margin-top: -40px">获取 Daemonset 的事件</div>
         </el-card>
 
         <el-row>
           <el-col>
             <div style="margin-left: 8px">
-              <button class="pixiu-two-button" @click="getDeploymentEvents">查询</button>
+              <button class="pixiu-two-button" @click="getDaemonsetEvents">查询</button>
               <button
                 style="margin-left: 10px; width: 85px"
                 class="pixiu-two-button2"
@@ -621,19 +508,16 @@
 <script setup lang="jsx">
 import { useRouter } from 'vue-router';
 import { reactive, getCurrentInstance, onMounted, onUnmounted, ref, watch, provide } from 'vue';
-import jsYaml from 'js-yaml';
 import { getTableData, searchData } from '@/utils/utils';
-import PixiuTag from '@/components/pixiuTag/index.vue';
-import PiXiuYaml from '@/components/pixiuyaml/index.vue';
 import { getLocalNamespace } from '@/services/kubernetes/namespaceService';
-import { getPodsByLabels, deletePod, getPodLog } from '@/services/kubernetes/podService';
+import { getPodsByLabels, getPodLog } from '@/services/kubernetes/podService';
 import {
-  getDeploymentList,
-  getDeployment,
-  updateDeployment,
-  deleteDeployment,
-  patchDeployment,
-} from '@/services/kubernetes/deploymentService';
+  getDaemonsetList,
+  getDaemonset,
+  updateDaemonset,
+  deleteDaemonset,
+  patchDaemonset,
+} from '@/services/kubernetes/daemonsetService';
 import {
   formatterImage,
   formatterTime,
@@ -642,12 +526,17 @@ import {
   formatterContainerImage,
   formatString,
 } from '@/utils/formatter';
-import { getEventList, deleteEvent } from '@/services/kubernetes/eventService';
+import {
+  getEventList,
+  deleteEvent,
+  getEventByResourceList,
+} from '@/services/kubernetes/eventService';
 import Pagination from '@/components/pagination/index.vue';
 import pixiuDialog from '@/components/pixiuDialog/index.vue';
 import Description from '@/components/description/index.vue';
 import PiXiuViewOrEdit from '@/components/pixiuyaml/viewOrEdit/index.vue';
 import PixiuLog from '@/components/pixiulog/index.vue';
+import { WarningFilled } from '@element-plus/icons-vue';
 
 const { proxy } = getCurrentInstance();
 const router = useRouter();
@@ -670,10 +559,10 @@ const data = reactive({
   tableData: [],
   loading: false,
 
-  deploymentList: [],
+  daemonsetList: [],
 
-  deploymentReplicasDialog: false,
-  deploymentRepcliasFrom: {
+  daemonsetReplicasDialog: false,
+  daemonsetRepcliasFrom: {
     name: '',
     origin: '',
     target: 0,
@@ -687,9 +576,8 @@ const data = reactive({
   // 删除对象属性
   deleteDialog: {
     close: false,
-    objectName: 'Deployment',
+    objectName: 'Daemonset',
     deleteName: '',
-    namespace: '',
   },
 
   imageData: {
@@ -703,7 +591,7 @@ const data = reactive({
   logData: {
     drawer: false,
 
-    deployment: '',
+    daemonset: '',
     namespace: '',
     selectedPodMap: {},
     selectedPods: [],
@@ -723,7 +611,7 @@ const data = reactive({
     loading: false,
     width: '80%',
 
-    deployment: '',
+    daemonset: '',
     eventTableData: [],
     events: [],
     multipleEventSelection: [],
@@ -752,7 +640,7 @@ onMounted(() => {
   window.addEventListener('setItem', handleStorageChange);
 
   // 初始化 workload 列表
-  getDeployments();
+  getDaemonsets();
 });
 
 onUnmounted(() => {
@@ -767,7 +655,7 @@ const handleStorageChange = (e) => {
       }
       data.namespace = e.newValue;
       // 监控到切换命名空间之后，重新获取 workload 列表
-      getDeployments();
+      getDaemonsets();
     }
   }
 };
@@ -777,7 +665,7 @@ const handleMonitorDrawer = (row) => {
 };
 
 const handleEventDrawer = (row) => {
-  data.eventData.deployment = row;
+  data.eventData.daemonset = row;
   data.eventData.drawer = true;
 };
 
@@ -786,7 +674,7 @@ const closeEventDrawer = () => {
     drawer: false,
     loading: false,
     width: '80%',
-    deployment: '',
+    daemonset: '',
     eventTableData: [],
     events: [],
     multipleEventSelection: [],
@@ -802,13 +690,11 @@ const closeEventDrawer = () => {
   };
 };
 
-const getDeploymentEvents = async () => {
-  const namespace = data.eventData.deployment.metadata.namespace;
-  const name = data.eventData.deployment.metadata.name;
+const getDaemonsetEvents = async () => {
+  const namespace = data.eventData.daemonset.metadata.namespace;
+  const name = data.eventData.daemonset.metadata.name;
 
-  data.eventData.loading = true;
-  const [result, err] = await getEventList(data.cluster, namespace, name);
-  data.eventData.loading = false;
+  const [result, err] = await getEventByResourceList(data.cluster, namespace, name, 'daemonset');
   if (err) {
     proxy.$notify.error(err.response.data.message);
     return;
@@ -846,19 +732,19 @@ const deleteEventsInBatch = async () => {
     }
   }
   proxy.$notify.success('批量删除事件成功');
-  getDeploymentEvents();
+  await getDaemonsetEvents();
 };
 
 const handleLogDrawer = (row) => {
-  data.logData.deployment = row;
+  data.logData.daemonset = row;
   data.logData.namespace = row.metadata.namespace;
 
-  getDeploymentPods();
+  getDaemonsetPods();
   data.logData.drawer = true;
 };
 
 const closeLogDrawer = () => {
-  data.logData.deployment = '';
+  data.logData.daemonset = '';
   data.logData.namespace = '';
   data.logData.selectedPodMap = {};
   data.logData.selectedPods = [];
@@ -872,14 +758,18 @@ const closeLogDrawer = () => {
   data.logData.podLogs = '点击查询获取日志';
 };
 
-const getDeploymentPods = async () => {
-  let matchLabels = data.logData.deployment.spec.selector.matchLabels;
+const getDaemonsetPods = async () => {
+  let matchLabels = data.logData.daemonset.spec.selector.matchLabels;
   let labels = [];
   for (let key in matchLabels) {
     labels.push(key + '=' + matchLabels[key]);
   }
 
-  const [result, err] = await getPodsByLabels(data.cluster, data.namespace, labels.join(','));
+  const [result, err] = await getPodsByLabels(
+    data.cluster,
+    data.logData.daemonset.metadata.namespace,
+    labels.join(','),
+  );
   if (err) {
     proxy.$notify.error(err.response.data.message);
     return;
@@ -951,35 +841,25 @@ const getPodLogs = async () => {
   }
 };
 
-const getDeployReady = (row) => {
-  let availableReplicas = row.status.availableReplicas;
-  if (availableReplicas === undefined) {
-    availableReplicas = 0;
-  }
-
-  return availableReplicas + '/' + row.spec.replicas;
-};
-
 const handleDeleteDialog = (row) => {
   data.deleteDialog.close = true;
   data.deleteDialog.deleteName = row.metadata.name;
-  data.deleteDialog.namespace = row.metadata.namespace;
 };
 
 const confirm = async () => {
-  const [result, err] = await deleteDeployment(
+  const [result, err] = await deleteDaemonset(
     data.cluster,
-    data.deleteDialog.namespace,
+    data.namespace,
     data.deleteDialog.deleteName,
   );
   if (err) {
     proxy.$message.error(err.response.data.message);
     return;
   }
-  proxy.$message.success(`Deployment(${data.deleteDialog.deleteName}) 删除成功`);
+  proxy.$message.success(`Daemonset(${data.deleteDialog.deleteName}) 删除成功`);
 
   clean();
-  await getDeployments();
+  await getDaemonsets();
 };
 
 const cancel = () => {
@@ -997,10 +877,10 @@ const onChange = (v) => {
   data.pageInfo.limit = v.limit;
   data.pageInfo.page = v.page;
 
-  data.tableData = getTableData(data.pageInfo, data.deploymentList);
+  data.tableData = getTableData(data.pageInfo, data.daemonsetList);
 
   if (data.pageInfo.search.searchInfo !== '') {
-    searchDeployments();
+    searchDaemonsets();
   }
 };
 
@@ -1021,7 +901,7 @@ const confirmEvent = async (row) => {
     },
   };
 
-  const [result, err] = await patchDeployment(data.cluster, row.ns, row.deploymentName, patchData);
+  const [result, err] = await patchDaemonset(data.cluster, row.ns, row.daemonsetName, patchData);
   if (err) {
     proxy.$notify.error(err.response.data.message);
     return;
@@ -1044,13 +924,14 @@ const handleImageChange = (row) => {
 const handleImageDialog = async (row) => {
   const namespace = row.metadata.namespace;
   const name = row.metadata.name;
-  const [deploy, err] = await getDeployment(data.cluster, namespace, name);
+  const [deploy, err] = await getDaemonset(data.cluster, namespace, name);
   if (err) {
     proxy.$notify.error(err.response.data.message);
     return;
   }
 
   const containers = deploy.spec.template.spec.containers;
+
   data.imageData.images = [];
   for (let container of containers) {
     data.imageData.images.push({
@@ -1059,20 +940,20 @@ const handleImageDialog = async (row) => {
       name: container.name,
       change: false,
       newImage: '',
-      deploymentName: row.metadata.name,
+      daemonsetName: row.metadata.name,
       ns: row.metadata.namespace,
     });
   }
   if (deploy.spec.template.spec.initContainers) {
-    const containers = deploy.spec.template.spec.initContainers;
-    for (let container of containers) {
+    const initContainers = deploy.spec.template.spec.initContainers;
+    for (let container of initContainers) {
       data.imageData.images.push({
         init: true,
         image: container.image,
         name: container.name,
         change: false,
         newImage: '',
-        deploymentName: row.metadata.name,
+        daemonsetName: row.metadata.name,
         ns: row.metadata.namespace,
       });
     }
@@ -1087,11 +968,7 @@ const cancelImageFunc = () => {
 
 const handleEditYamlDialog = async (row) => {
   data.yamlName = row.metadata.name;
-  const [result, err] = await getDeployment(
-    data.cluster,
-    row.metadata.namespace,
-    row.metadata.name,
-  );
+  const [result, err] = await getDaemonset(data.cluster, row.metadata.namespace, data.yamlName);
   if (err) {
     proxy.$message.error(err.response.data.message);
     return;
@@ -1100,19 +977,13 @@ const handleEditYamlDialog = async (row) => {
   data.editYamlDialog = true;
 };
 
-const createDeployment = () => {
-  const url = `/deployments/createDeployment?cluster=${data.cluster}`;
-  router.push(url);
-};
-
-const editDeployment = (row) => {
-  const url = `/deployments/editDeployment?cluster=${data.cluster}&name=${row.metadata.name}`;
-  router.push(url);
+const createDaemonset = () => {
+  proxy.$message.warning('暂不支持');
 };
 
 const jumpRoute = (row) => {
   router.push({
-    name: 'DeploymentDetail',
+    name: 'DaemonsetDetail',
     query: {
       cluster: data.cluster,
       namespace: row.metadata.namespace,
@@ -1121,61 +992,32 @@ const jumpRoute = (row) => {
   });
 };
 
-const getDeployments = async () => {
+const getDaemonsets = async () => {
   data.loading = true;
-  const [result, err] = await getDeploymentList(data.cluster, data.namespace);
+  const [result, err] = await getDaemonsetList(data.cluster, data.namespace);
   data.loading = false;
   if (err) {
     proxy.$message.error(err.response.data.message);
     return;
   }
 
-  data.deploymentList = result.items;
-  data.pageInfo.total = data.deploymentList.length;
-  data.tableData = getTableData(data.pageInfo, data.deploymentList);
+  data.daemonsetList = result.items;
+  data.pageInfo.total = data.daemonsetList.length;
+  data.tableData = getTableData(data.pageInfo, data.daemonsetList);
 };
 
-provide('getDeployments', getDeployments);
+provide('getDaemonsets', getDaemonsets);
 
-const searchDeployments = async () => {
-  data.tableData = searchData(data.pageInfo, data.deploymentList);
+const searchDaemonsets = async () => {
+  data.tableData = searchData(data.pageInfo, data.daemonsetList);
 };
 
-const handleDeploymentScaleDialog = (row) => {
-  data.deploymentRepcliasFrom.name = row.metadata.name;
-  data.deploymentRepcliasFrom.target = '';
-  data.deploymentRepcliasFrom.origin = row.spec.replicas;
-  data.deploymentReplicasDialog = true;
-};
+const closeDaemonsetScaleDialog = (row) => {
+  data.daemonsetReplicasDialog = false;
 
-const closeDeploymentScaleDialog = (row) => {
-  data.deploymentReplicasDialog = false;
-
-  data.deploymentRepcliasFrom.name = '';
-  data.deploymentRepcliasFrom.origin = '';
-  data.deploymentRepcliasFrom.target = 0;
-};
-
-const confirmDeploymentScale = async () => {
-  const patchData = {
-    spec: {
-      replicas: Number(data.deploymentRepcliasFrom.target),
-    },
-  };
-
-  const [result, err] = await patchDeployment(
-    data.cluster,
-    data.namespace,
-    data.deploymentRepcliasFrom.name,
-    patchData,
-  );
-  if (err) {
-    proxy.$notify.error(err.response.data.message);
-    return;
-  }
-
-  await getDeployments();
-  closeDeploymentScaleDialog();
+  data.daemonsetRepcliasFrom.name = '';
+  data.daemonsetRepcliasFrom.origin = '';
+  data.daemonsetRepcliasFrom.target = 0;
 };
 </script>
 
