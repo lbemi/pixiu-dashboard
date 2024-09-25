@@ -36,7 +36,7 @@
           size="small"
           style="padding-left: 0"
           text
-          @click="state.env.push({ type: 'custom', name: '', value: '', otherValue: '' })"
+          @click="addRequiredSetting"
           >新增</el-button
         >
       </el-form-item>
@@ -45,55 +45,92 @@
         :key="index"
         style="margin-left: 100px"
       >
-        <el-form-item label="命名空间" label-position="top" style="width: 350px">
-          <el-select size="small">
-            <el-option label="aaa" value="aa" />
-          </el-select>
-        </el-form-item>
-        <el-form-item
-          label="拓扑域"
-          :prop="'requiredDuringSchedulingIgnoredDuringExecution.' + index + '.topologyKey'"
-          :rules="[{ required: true, message: '不能为空', trigger: 'blur' }]"
-        >
-          <el-input v-model="item.topologyKey" size="small" />
-        </el-form-item>
-        <el-form-item style="width: 300px">
-          <div style="display: flex; align-items: center; width: 200px">
-            <span>选择器</span>
-            <el-button
-              icon="CirclePlusFilled"
-              type="primary"
-              size="small"
-              text
-              @click="state.env.push({ type: 'custom', name: '', value: '', otherValue: '' })"
-              >新增</el-button
-            ><el-button size="small" link type="primary">查看应用列表</el-button>
-          </div>
-        </el-form-item>
-        <el-form-item>
-          <el-table size="small" :data="item.matchExpressions">
-            <el-table-column label="标签名">
-              <template #default="scope">
-                <el-form-item>
-                  <el-input v-model="scope.row.key" size="small" />
-                </el-form-item>
-              </template>
-            </el-table-column>
-            <el-table-column prop="operator" label="操作符号">
-              <el-form-item>
-                <template #default="scope">
-                  <el-select v-model="scope.row.operator" size="small">
-                    <el-option label="In" value="In" />
-                    <el-option label="NotIn" value="NotIn" />
-                    <el-option label="Exists" value="Exists" />
-                    <el-option label="DoesNotExists" value="DoesNotExists" />
-                  </el-select>
-                </template>
+        <el-card shadow="hover" style="margin-bottom: 10px; width: 80vh; background: transparent">
+          <div style="display: flex; justify-content: space-between">
+            <div style="width: 100%">
+              <el-form-item label="命名空间" label-position="top" style="width: 350px">
+                <el-select size="small">
+                  <el-option label="aaa" value="aa" />
+                </el-select>
               </el-form-item>
-            </el-table-column>
-            <el-table-column label="标签值"></el-table-column>
-          </el-table>
-        </el-form-item>
+              <el-form-item
+                label="拓扑域"
+                :prop="'requiredDuringSchedulingIgnoredDuringExecution.' + index + '.topologyKey'"
+                :rules="[{ required: true, message: '不能为空', trigger: 'blur' }]"
+                style="width: 350px"
+              >
+                <el-input v-model="item.topologyKey" size="small" />
+              </el-form-item>
+              <el-form-item style="width: 300px">
+                <div style="display: flex; align-items: center; width: 200px">
+                  <span>选择器</span>
+                  <el-button
+                    icon="CirclePlusFilled"
+                    type="primary"
+                    size="small"
+                    text
+                    @click="addMatchExpressions(item)"
+                    >新增</el-button
+                  ><el-button size="small" link type="primary">查看应用列表</el-button>
+                </div>
+              </el-form-item>
+              <el-form-item>
+                <el-table size="small" :data="item.labelSelector.matchExpressions">
+                  <el-table-column prop="key" label="标签名">
+                    <template #default="scope">
+                      <el-form-item>
+                        <el-input v-model="scope.row.key" size="small" />
+                      </el-form-item>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作符号" width="150">
+                    <template #default="scope">
+                      <el-form-item>
+                        <el-select v-model="scope.row.operator" size="small">
+                          <el-option label="In" value="In" />
+                          <el-option label="NotIn" value="NotIn" />
+                          <el-option label="Exists" value="Exists" />
+                          <el-option label="DoesNotExists" value="DoesNotExists" />
+                        </el-select>
+                      </el-form-item>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="标签值">
+                    <template #default="scope">
+                      <el-form-item>
+                        <el-input v-model="scope.row.values" size="small" />
+                      </el-form-item>
+                    </template>
+                  </el-table-column>
+                  <el-table-column width="80">
+                    <template #default="scope">
+                      <el-form-item>
+                        <el-button
+                          icon="RemoveFilled"
+                          type="primary"
+                          size="small"
+                          text
+                          style="margin-left: 10px"
+                          @click="item.labelSelector.matchExpressions.splice(scope.$index, 1)"
+                        ></el-button>
+                      </el-form-item>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </el-form-item>
+            </div>
+            <div>
+              <el-button
+                icon="Delete"
+                type="danger"
+                size="small"
+                text
+                @click="deleteRequiredSetting(index)"
+                >删除</el-button
+              >
+            </div>
+          </div>
+        </el-card>
       </div>
       <el-form-item label="尽量满足"> 尽量满足 </el-form-item>
     </div>
@@ -123,20 +160,7 @@ const state = reactive({
         weight: 100,
       },
     ],
-    requiredDuringSchedulingIgnoredDuringExecution: [
-      {
-        labelSelector: {
-          matchExpressions: [
-            {
-              key: 'service',
-              operator: 'In',
-              values: ['oilyy-dpc-cservice-uat'],
-            },
-          ],
-        },
-        topologyKey: 'kubernetes.io/hostname',
-      },
-    ],
+    requiredDuringSchedulingIgnoredDuringExecution: [],
   },
 });
 
@@ -145,6 +169,25 @@ const set = () => {
 };
 const cancel = () => {
   state.set = !state.set;
+};
+
+const addRequiredSetting = () => {
+  state.affinity.requiredDuringSchedulingIgnoredDuringExecution.push({
+    labelSelector: {
+      matchExpressions: [],
+    },
+    topologyKey: 'kubernetes.io/hostname',
+  });
+};
+const deleteRequiredSetting = (index) => {
+  state.affinity.requiredDuringSchedulingIgnoredDuringExecution.splice(index, 1);
+};
+const addMatchExpressions = (data) => {
+  data.labelSelector.matchExpressions.push({
+    key: 'service',
+    operator: 'In',
+    values: ['xxxx'],
+  });
 };
 const props = defineProps({
   title: {

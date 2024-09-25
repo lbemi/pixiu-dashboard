@@ -100,8 +100,8 @@
             </div>
           </el-form-item>
           <Affinity :title="'节点亲和性'" />
-          <el-form-item label="应用亲和性">TODO</el-form-item>
-          <el-form-item label="应用反亲和性">TODO</el-form-item>
+          <Affinity :title="'应用亲和性'" />
+          <Affinity :title="'应用反亲和性'" />
           <el-form-item label="调度容忍"
             ><Toleration ref="tolerationRef" :tolerations="tolerations"
           /></el-form-item>
