@@ -21,8 +21,8 @@
         v-show="state.env.length !== 0"
         :data="state.env"
         style="font-size: 13px; margin-left: 100px"
-        :cell-style="{ padding: '10px' }"
-        :header-cell-style="{ padding: '5px' }"
+        :cell-style="() => ({ padding: '10px' })"
+        :header-cell-style="() => ({ padding: '5px' })"
       >
         <el-table-column label="类型" width="140">
           <template #default="scope">
